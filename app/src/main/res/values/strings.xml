@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">StockWatcher</string>
+
+    <string name="finn_api_key">c8rg8tqad3i8tv0k6i60</string>
+</resources>
