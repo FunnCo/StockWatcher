@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import com.funnco.stockwatcher.R
 import com.funnco.stockwatcher.common.finn.Repository
+import com.funnco.stockwatcher.common.model.StockModel
 import com.funnco.stockwatcher.databinding.ActivityMainBinding
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -19,31 +20,28 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityMainBinding
 
+
+    lateinit var updateInterface: StockUpdateInterface
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        updateInterface = object : StockUpdateInterface {
+            override fun updateCertainStock(stock: StockModel) {
+                Log.d("UpateStocks", "Updated 1")
+            }
+
+            override fun updateAllStocks(stocks: List<StockModel>) {
+                Log.d("UpateStocks", "Updated 1")
+            }
+        }
+
+        Repository.subscribeToUpdates(updateInterface, Repository.listOfStocks[0].symbol)
         binding.recycler.adapter = RecyclerAdapter(Repository.listOfStocks)
 
 
-//        val client = HttpClient(CIO) {
-//            install(WebSockets)
-//        }
-//        MainScope().launch {
-//            val response =
-//                client.webSocket("wss://ws.finnhub.io?token=${resources.getString(R.string.finn_api_key)}") {
-//
-//                    while (true) {
-//                        var messages = incoming.receive() as? Frame.Text
-//                        Log.d("ClientWebSocket", messages!!.readText())
-//                        if (messages.readText() == "{\"type\":\"ping\"}") {
-//
-//
-//                        }
-//                    }
-//
-//                }
-//        }
+
     }
 }

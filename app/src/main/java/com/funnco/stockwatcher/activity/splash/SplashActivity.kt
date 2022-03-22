@@ -14,9 +14,8 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
         StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().permitAll().build())
-        Repository.init()
-        Handler().postDelayed({
+        Repository.init {
             startActivity(Intent(this, MainActivity::class.java))
-        }, 30000)
+        }
     }
 }
