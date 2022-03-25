@@ -6,4 +6,6 @@ interface StockUpdateInterface {
     fun updateCertainStock(stock: StockModel)
 
     fun updateAllStocks(stocks: List<StockModel>)
+
+    fun updateTest(value: Double)
 }

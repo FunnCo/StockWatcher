@@ -58,7 +58,7 @@ class Repository {
                             var messages = incoming.receive() as? Frame.Text
                             Log.d("ClientWebSocket", messages!!.readText())
                             if (messages.readText() == "{\"type\":\"ping\"}") {
-                                outgoing.send(Frame.Text("{\"type\":\"subscribe\",\"symbol\":\"BINANCE:BTCUSDT\"}"))
+                                outgoing.send(Frame.Text("{\"type\":\"subscribe\",\"symbol\":\"${symbol.symbol}\"}"))
                                 Log.d("ClientWebSocket", "Sent query with symbol: ${symbol.symbol}")
                             }
 
@@ -66,6 +66,7 @@ class Repository {
                             if (messages.readText().contains("{\"data\":")) {
                                 val a = Klaxon().parse<StockUpdateModel>(messages.readText())
                                 Log.d("QWERTY", "it parsed? ${a?.type}")
+                                subscriber.updateTest(a?.data?.get(0)?.p!!)
                             }
                         }
 

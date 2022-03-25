@@ -1,6 +1,7 @@
 package com.funnco.stockwatcher.common.model
 
 class QuoteModel(
+    val c: Double?,
     val p: Double?,
     val s: String?,
     val t: Long?,
