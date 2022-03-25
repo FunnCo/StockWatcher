@@ -1,11 +1,15 @@
 package com.funnco.stockwatcher.activity.main
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.funnco.stockwatcher.common.finn.Repository
 import com.funnco.stockwatcher.common.model.StockModel
 import com.funnco.stockwatcher.databinding.ItemStockBinding
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 
 class RecyclerAdapter(val listOfItems: List<StockModel>) : RecyclerView.Adapter<RecyclerAdapter.RecyclerViewHolder>() {
     class RecyclerViewHolder(var itemView: View) : RecyclerView.ViewHolder(itemView){
@@ -16,7 +20,25 @@ class RecyclerAdapter(val listOfItems: List<StockModel>) : RecyclerView.Adapter<
             binding = ItemStockBinding.bind(itemView)
 
             binding.stockName.text = item.symbol.description
-            binding.stockPrice.text = item.quote.c.toString()
+            binding.stockPrice.text = '$'+item.quote.c.toString()
+
+            MainScope().launch {
+                Repository.subscribeToUpdates(updateInterface, item.symbol)
+            }
+        }
+
+        val updateInterface = object : StockUpdateInterface {
+            override fun updateCertainStock(stock: StockModel) {
+                binding.stockPrice.text = stock.quote.c?.toString()
+            }
+
+            override fun updateAllStocks(stocks: List<StockModel>) {
+                Log.d("UpdateStocks", "Updated 2")
+            }
+
+            override fun updateTest(value: Double) {
+                Log.d("UpdateStocks", "Updated 3")
+            }
         }
 
     }

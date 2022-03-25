@@ -13,10 +13,9 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.features.websocket.*
 import io.ktor.http.cio.websocket.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import okhttp3.internal.notify
+import okhttp3.internal.wait
 
 class Repository {
     companion object {
@@ -32,7 +31,7 @@ class Repository {
                 val symbols = apiClient.stockSymbols("US", "", "", "")
 
                 val tempList = mutableListOf<StockModel>()
-                for (i in 0..5) {
+                for (i in 0..1) {
                     tempList.add(StockModel(symbols[i], apiClient.quote(symbols[i].symbol!!)))
                     Log.d("Test", "will wait now")
                     delay(100)
@@ -43,34 +42,58 @@ class Repository {
             }
         }
 
-        fun getStockModels(): List<StockModel> {
-            return listOfStocks
-        }
 
-        fun subscribeToUpdates(subscriber: StockUpdateInterface, symbol: StockSymbol) {
+        var isWssActive = false
+        lateinit var webSocket: DefaultClientWebSocketSession
+        val lock: Any = 1
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        suspend fun subscribeToUpdates(subscriber: StockUpdateInterface, symbol: StockSymbol) {
             val client = HttpClient(CIO) {
                 install(WebSockets)
             }
-            MainScope().launch {
-                val response =
-                    client.webSocket("wss://ws.finnhub.io?token=c8rg8tqad3i8tv0k6i60") {
-                        while (true) {
-                            var messages = incoming.receive() as? Frame.Text
-                            Log.d("ClientWebSocket", messages!!.readText())
-                            if (messages.readText() == "{\"type\":\"ping\"}") {
+            Log.d("SubscriptionManager", "Subscribed to ${symbol.symbol}")
+            if (!isWssActive) {
+//                isWssActive = true
+                MainScope().launch {
+                    val response =
+                        client.webSocket("wss://ws.finnhub.io?token=c8rg8tqad3i8tv0k6i60") {
+                            webSocket = this
+                            while (true) {
+                                Log.d("ClientWebSocket", "1 ${incoming.isClosedForReceive}")
+                                if (incoming.isClosedForReceive) {
+                                    synchronized(lock) {
+
+                                        while (incoming.isClosedForReceive) {
+                                            lock.wait()
+                                        }
+                                        Log.d("ClientWebSocket", "1.2")
+                                    }
+                                }
+                                Log.d("ClientWebSocket", "1.1")
+                                var messages = incoming.receive() as? Frame.Text
+                                Log.d("ClientWebSocket", "3")
+                                Log.d("ClientWebSocket", messages!!.readText())
+                                synchronized(lock) {
+                                    lock.notify()
+                                }
                                 outgoing.send(Frame.Text("{\"type\":\"subscribe\",\"symbol\":\"${symbol.symbol}\"}"))
-                                Log.d("ClientWebSocket", "Sent query with symbol: ${symbol.symbol}")
+                                Log.d(
+                                    "ClientWebSocket",
+                                    "Sent query with symbol: ${symbol.symbol}"
+                                )
+
+
+                                if (messages!!.readText().contains("{\"data\":")) {
+                                    val a =
+                                        Klaxon().parse<StockUpdateModel>(messages.readText())
+                                    Log.d("QWERTY", "it parsed? ${a?.type}")
+                                    subscriber.updateTest(a?.data?.get(0)?.p!!)
+                                }
                             }
 
-                            // {"data":[{"p":7296.89,"s":"BINANCE:BTCUSDT","t":1575526691134,"v":0.011467}],"type":"trade"}
-                            if (messages.readText().contains("{\"data\":")) {
-                                val a = Klaxon().parse<StockUpdateModel>(messages.readText())
-                                Log.d("QWERTY", "it parsed? ${a?.type}")
-                                subscriber.updateTest(a?.data?.get(0)?.p!!)
-                            }
                         }
-
-                    }
+                }
             }
         }
 

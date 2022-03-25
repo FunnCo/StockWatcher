@@ -27,22 +27,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        updateInterface = object : StockUpdateInterface {
-            override fun updateCertainStock(stock: StockModel) {
-                Log.d("UpateStocks", "Updated 1")
-            }
-
-            override fun updateAllStocks(stocks: List<StockModel>) {
-                Log.d("UpateStocks", "Updated 1")
-            }
-
-            override fun updateTest(value: Double) {
-                supportActionBar?.title = value.toString()
-            }
-        }
-
-        Repository.subscribeToUpdates(updateInterface, Repository.listOfStocks[0].symbol)
         binding.recycler.adapter = RecyclerAdapter(Repository.listOfStocks)
 
 
