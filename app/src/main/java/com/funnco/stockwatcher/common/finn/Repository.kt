@@ -21,6 +21,7 @@ class Repository {
     companion object {
 
         lateinit var listOfStocks: List<StockModel>
+        val receivedMessages = mutableListOf<String>()
 
         fun init(callback: (Boolean) -> Unit) {
             ApiClient.apiKey["token"] = "c8rg8tqad3i8tv0k6i60"
@@ -38,64 +39,57 @@ class Repository {
                 }
                 Log.d("Test", "yay")
                 listOfStocks = tempList
+
+                incomingJob = MainScope().launch {
+                    while (true) {
+
+                    }
+                }
+
+                // Инициализация вебсокета
+                val client = HttpClient(CIO) {
+                    install(WebSockets)
+                }
+                client.webSocket("wss://ws.finnhub.io?token=c8rg8tqad3i8tv0k6i60") {
+                    webSocket = this
+                }
+
                 callback(true)
             }
         }
 
-
-        var isWssActive = false
         lateinit var webSocket: DefaultClientWebSocketSession
-        val lock: Any = 1
+        lateinit var incomingJob: Job
+        lateinit var outgoingJob: Job
 
-        @OptIn(ExperimentalCoroutinesApi::class)
         suspend fun subscribeToUpdates(subscriber: StockUpdateInterface, symbol: StockSymbol) {
-            val client = HttpClient(CIO) {
-                install(WebSockets)
+            // Поток для отправки подписок на событие
+            MainScope().launch {
+                Log.d("SubscriptionManager", "Subscribed to ${symbol.symbol}")
+                if (outgoingJob != null) {
+                    outgoingJob.join()
+                }
+                outgoingJob = MainScope().launch {
+                    webSocket.send(Frame.Text("{\"type\":\"subscribe\",\"symbol\":\"${symbol.symbol}\"}"))
+                    Log.d(
+                        "ClientWebSocket",
+                        "Sent query with symbol: ${symbol.symbol}"
+                    )
+                }
+
             }
-            Log.d("SubscriptionManager", "Subscribed to ${symbol.symbol}")
-            if (!isWssActive) {
-//                isWssActive = true
-                MainScope().launch {
-                    val response =
-                        client.webSocket("wss://ws.finnhub.io?token=c8rg8tqad3i8tv0k6i60") {
-                            webSocket = this
-                            while (true) {
-                                Log.d("ClientWebSocket", "1 ${incoming.isClosedForReceive}")
-                                if (incoming.isClosedForReceive) {
-                                    synchronized(lock) {
 
-                                        while (incoming.isClosedForReceive) {
-                                            lock.wait()
-                                        }
-                                        Log.d("ClientWebSocket", "1.2")
-                                    }
-                                }
-                                Log.d("ClientWebSocket", "1.1")
-                                var messages = incoming.receive() as? Frame.Text
-                                Log.d("ClientWebSocket", "3")
-                                Log.d("ClientWebSocket", messages!!.readText())
-                                synchronized(lock) {
-                                    lock.notify()
-                                }
-                                outgoing.send(Frame.Text("{\"type\":\"subscribe\",\"symbol\":\"${symbol.symbol}\"}"))
-                                Log.d(
-                                    "ClientWebSocket",
-                                    "Sent query with symbol: ${symbol.symbol}"
-                                )
-
-
-                                if (messages!!.readText().contains("{\"data\":")) {
-                                    val a =
-                                        Klaxon().parse<StockUpdateModel>(messages.readText())
-                                    Log.d("QWERTY", "it parsed? ${a?.type}")
-                                    subscriber.updateTest(a?.data?.get(0)?.p!!)
-                                }
-                            }
-
-                        }
+            // Поток на принятие результатов подписки
+            MainScope().launch {
+                Log.d("SubscriptionManager", "Listening to ${symbol.symbol}")
+                if (incomingJob != null){
+                    incomingJob.join()
+                }
+                incomingJob = MainScope().launch {
+                    val message = webSocket.incoming.receive() as Frame.Text
+                    receivedMessages.add(message.readText())
                 }
             }
         }
-
     }
 }
