@@ -28,16 +28,8 @@ class RecyclerAdapter(val listOfItems: List<StockModel>) : RecyclerView.Adapter<
         }
 
         val updateInterface = object : StockUpdateInterface {
-            override fun updateCertainStock(stock: StockModel) {
-                binding.stockPrice.text = stock.quote.c?.toString()
-            }
-
-            override fun updateAllStocks(stocks: List<StockModel>) {
-                Log.d("UpdateStocks", "Updated 2")
-            }
-
-            override fun updateTest(value: Double) {
-                Log.d("UpdateStocks", "Updated 3")
+            override fun updateCertainStock(price: Double) {
+                binding.stockPrice.text = "$${price}"
             }
         }
 

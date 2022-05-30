@@ -15,7 +15,7 @@ class SplashActivity : AppCompatActivity() {
         setContentView(R.layout.activity_splash)
         supportActionBar?.hide()
         StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().permitAll().build())
-        Repository.init {
+        Repository.init(this) {
             startActivity(Intent(this, MainActivity::class.java))
         }
     }
