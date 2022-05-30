@@ -1,5 +1,6 @@
 package com.funnco.stockwatcher.activity.main
 
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -28,8 +29,15 @@ class RecyclerAdapter(val listOfItems: List<StockModel>) : RecyclerView.Adapter<
         }
 
         val updateInterface = object : StockUpdateInterface {
-            override fun updateCertainStock(price: Double) {
-                binding.stockPrice.text = "$${price}"
+            override fun updateCertainStock(newPrice: Double) {
+                val oldPrice = binding.stockPrice.text.toString().toFloat()
+                if(oldPrice > newPrice){
+                    binding.root.setCardBackgroundColor(Color.parseColor("#40FF6363"))
+                }
+                else if (oldPrice < newPrice) {
+                    binding.root.setCardBackgroundColor(Color.parseColor("#4080FF63"))
+                }
+                binding.stockPrice.text = "$${newPrice}"
             }
         }
 

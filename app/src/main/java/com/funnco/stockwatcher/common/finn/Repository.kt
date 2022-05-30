@@ -39,7 +39,6 @@ class Repository {
         /**
          * This method is used to connect to the server and start listening to it's messages
          *
-         * @author FunnCo
          * @param activity activity from where this method is being called
          * @param callback callback for activity that server connection is set
          */
